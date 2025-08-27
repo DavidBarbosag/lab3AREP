@@ -1,6 +1,7 @@
 package httpserver;
 
 import miniSpringBoot.GetMapping;
+import miniSpringBoot.RequestParam;
 import miniSpringBoot.RestController;
 
 import java.lang.reflect.InvocationTargetException;
@@ -119,12 +120,22 @@ public class HttpServer {
                 + "content-type: text/html\n\r"
                 + "\n\r";
         try {
-        HttpRequest req = new HttpRequest(requri);
-        HttpResponse res = new HttpResponse();
-        String servicePath = requri.getPath().substring(4);
-        Method m = services.get(servicePath);
+            HttpRequest req = new HttpRequest(requri);
+            HttpResponse res = new HttpResponse();
+            String servicePath = requri.getPath().substring(4);
+            Method m = services.get(servicePath);
 
-            return header + m.invoke(null);
+            String[] argsValues = null;
+            RequestParam rp = (RequestParam) m.getParameterAnnotations()[0][0];
+
+            if(requri.getQuery() == null){
+                argsValues = new String[]{rp.defaultValue()};
+            } else {
+                String queryParamName = rp.value();
+                argsValues = new String[]{req.getValue(queryParamName)};
+            }
+
+            return header + m.invoke(null, argsValues);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

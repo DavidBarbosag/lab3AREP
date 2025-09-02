@@ -145,10 +145,13 @@ Con valor por defecto
 
 http://localhost:35000/app/greeting
 
+![resultadoSinParametro](assets/resSinParam.png)
 
 Respuesta → Hola World
 
 http://localhost:35000/app/greeting?name=nombre
+
+![resultadoConParametro](assets/resParamQ.png)
 
 * Archivos estáticos
 

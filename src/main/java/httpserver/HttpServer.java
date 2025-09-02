@@ -143,7 +143,9 @@ public class HttpServer {
                     if (a instanceof RequestParam rp) {
                         String paramName = rp.value();
                         String value = req.getValue(paramName);
-                        if (value == null) value = rp.defaultValue();
+                        if (value == null || value.isEmpty()) {
+                            value = rp.defaultValue();
+                        }
                         argvalues[i] = value;  // asigna valor a este argumento
                     }
                 }

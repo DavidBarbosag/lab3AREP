@@ -15,10 +15,21 @@ public class HttpRequest {
     }
 
     public String getValue(String paramName) {
+        String query = requri.getQuery();
+        if (query == null) {
+            return null; // no hay parámetros en la URL
+        }
 
-        //Extrae el valor de paramName desde el query.
-        String paramValue = requri.getQuery().split("=")[1]; //Ejemplo: /app/hello?name=jhon
-        return paramValue;
+        // soporta varios parámetros ?name=jhon&age=20
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=", 2);
+            if (keyValue[0].equals(paramName)) {
+                return keyValue.length > 1 ? keyValue[1] : "";
+            }
+        }
+
+        return null; // no encontró el parámetro
     }
 
 }

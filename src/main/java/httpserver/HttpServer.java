@@ -4,6 +4,7 @@ import miniSpringBoot.GetMapping;
 import miniSpringBoot.RequestParam;
 import miniSpringBoot.RestController;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
@@ -17,17 +18,26 @@ public class HttpServer {
 
     public static void loadServices(String[] args){
         try {
-            Class c = Class.forName(args[0]);
+            String packageName = "miniSpringBoot";
+            File directory = new File("target/classes/" + packageName.replace(".", "/"));
 
-            if(c.isAnnotationPresent(RestController.class)){
-                Method[] methods = c.getDeclaredMethods();
-                for(Method m : methods){
-                    if(m.isAnnotationPresent(GetMapping.class)){
-                        String mapping = m.getAnnotation(GetMapping.class).value();
-                        services.put(mapping, m);
+            for (File file : directory.listFiles()) {
+                if (file.getName().endsWith(".class")) {
+                    String className = file.getName().substring(0, file.getName().length() - 6);
+                    Class c = Class.forName(packageName + "." + className);
+
+                    if(c.isAnnotationPresent(RestController.class)){
+                        Method[] methods = c.getDeclaredMethods();
+                        for(Method m : methods){
+                            if(m.isAnnotationPresent(GetMapping.class)){
+                                String mapping = m.getAnnotation(GetMapping.class).value();
+                                services.put(mapping, m);
+                            }
+                        }
                     }
                 }
             }
+
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -125,17 +135,21 @@ public class HttpServer {
             String servicePath = requri.getPath().substring(4);
             Method m = services.get(servicePath);
 
-            String[] argsValues = null;
-            RequestParam rp = (RequestParam) m.getParameterAnnotations()[0][0];
+            Annotation[][] paramAnnotations = m.getParameterAnnotations();
+            Object[] argvalues = new Object[paramAnnotations.length];
 
-            if(requri.getQuery() == null){
-                argsValues = new String[]{rp.defaultValue()};
-            } else {
-                String queryParamName = rp.value();
-                argsValues = new String[]{req.getValue(queryParamName)};
+            for (int i = 0; i < paramAnnotations.length; i++) {
+                for (Annotation a : paramAnnotations[i]) {
+                    if (a instanceof RequestParam rp) {
+                        String paramName = rp.value();
+                        String value = req.getValue(paramName);
+                        if (value == null) value = rp.defaultValue();
+                        argvalues[i] = value;  // asigna valor a este argumento
+                    }
+                }
             }
 
-            return header + m.invoke(null, argsValues);
+            return header + m.invoke(null, argvalues);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
